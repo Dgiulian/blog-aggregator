@@ -1,19 +1,23 @@
 import {
   CommandsRegistry,
-  handlerUsers,
   registerCommand,
   runCommand,
+  handlerAgg,
+  handlerRegister,
+  handlerUsers,
+  handlerAddFeed,
 } from "./commands";
 import { handlerLogin } from "./login";
-import { handlerRegister } from "./commands";
 import { handlerReset } from "./reset";
 
 async function main() {
   const registry: CommandsRegistry = {};
   registerCommand(registry, "login", handlerLogin);
   registerCommand(registry, "register", handlerRegister);
-  registerCommand(registry, "reset", handlerReset);
+  registerCommand(registry, "agg", handlerAgg);
   registerCommand(registry, "users", handlerUsers);
+  registerCommand(registry, "reset", handlerReset);
+  registerCommand(registry, "addfeed", handlerAddFeed);
 
   const args = process.argv.slice(2);
   if (args.length < 1) {
@@ -37,3 +41,4 @@ async function main() {
 }
 
 main();
+
