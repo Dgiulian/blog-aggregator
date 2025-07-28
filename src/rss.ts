@@ -1,4 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
+import { getAllFeeds } from "./lib/db/queries/feeds";
 
 export type RSSFeed = {
   channel: {
@@ -33,11 +34,7 @@ export async function fetchFeed(feedURL: string): Promise<RSSFeed> {
 
   const channel = parsed.rss.channel;
 
-  if (
-    !channel.title ||
-    !channel.link ||
-    !channel.description
-  ) {
+  if (!channel.title || !channel.link || !channel.description) {
     throw new Error("Missing channel metadata");
   }
 
@@ -58,14 +55,19 @@ export async function fetchFeed(feedURL: string): Promise<RSSFeed> {
         })
         .filter((item: RSSItem | null): item is RSSItem => item !== null);
     } else {
-        if (channel.item.title && channel.item.link && channel.item.description && channel.item.pubDate) {
-            items.push({
-                title: channel.item.title,
-                link: channel.item.link,
-                description: channel.item.description,
-                pubDate: channel.item.pubDate,
-            });
-        }
+      if (
+        channel.item.title &&
+        channel.item.link &&
+        channel.item.description &&
+        channel.item.pubDate
+      ) {
+        items.push({
+          title: channel.item.title,
+          link: channel.item.link,
+          description: channel.item.description,
+          pubDate: channel.item.pubDate,
+        });
+      }
     }
   }
 
@@ -77,4 +79,11 @@ export async function fetchFeed(feedURL: string): Promise<RSSFeed> {
       item: items,
     },
   };
+}
+
+export async function listAllFeeds() {
+  const feeds = await getAllFeeds();
+  for (let feed of feeds) {
+    console.log(`${feed.name} - ${feed.url}. Created by ${feed.user?.name}`);
+  }
 }

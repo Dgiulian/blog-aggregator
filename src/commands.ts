@@ -1,7 +1,7 @@
 import { readConfig, setUser } from "./config";
 import { createFeed, Feed, User } from "./lib/db/queries/feeds";
 import { createUser, getAllUsers, getUserByName } from "./lib/db/queries/users";
-import { fetchFeed } from "./rss";
+import { fetchFeed, listAllFeeds } from "./rss";
 
 export type CommandHandler = (
   cmdName: string,
@@ -34,7 +34,9 @@ export async function handlerAddFeed(cmdName: string, ...args: string[]) {
 
 export async function handlerAgg(cmdName: string, ...args: string[]) {
   const feed = await fetchFeed("https://www.wagslane.dev/index.xml");
-  console.log(feed);
+}
+export async function handlerListFeeds(cmdName: string, ...args: string[]) {
+  await listAllFeeds();
 }
 
 export async function handlerRegister(cmdName: string, ...args: string[]) {
