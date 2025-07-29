@@ -1,5 +1,9 @@
 import { readConfig, setUser } from "./config";
-import { createFeed, Feed, User } from "./lib/db/queries/feeds";
+import { createFeed, getFeedByUrl, Feed, User } from "./lib/db/queries/feeds";
+import {
+  createFeedFollow,
+  getFeedFollowsForUser,
+} from "./lib/db/queries/feedFollows";
 import { createUser, getAllUsers, getUserByName } from "./lib/db/queries/users";
 import { fetchFeed, listAllFeeds } from "./rss";
 
@@ -29,7 +33,50 @@ export async function handlerAddFeed(cmdName: string, ...args: string[]) {
     throw new Error(`Error: User "${config.currentUserName}" not found.`);
   }
   const feed = await createFeed(name, url, user.id);
+  console.log(`Feed created:`);
   printFeed(feed, user);
+
+  const feedFollow = await createFeedFollow(user.id, feed.id);
+  console.log(
+    `User ${feedFollow.user?.name || "Unknown"} is now following ${
+      feedFollow.feed?.name || "Unknown"
+    }`
+  );
+}
+
+export async function handlerFollow(cmdName: string, ...args: string[]) {
+  if (args.length < 1) {
+    throw new Error("Usage: follow <url>");
+  }
+  const [url] = args;
+  const config = readConfig();
+  const user = await getUserByName(config.currentUserName);
+  if (!user) {
+    throw new Error(`Error: User "${config.currentUserName}" not found.`);
+  }
+  const feed = await getFeedByUrl(url);
+  if (!feed) {
+    throw new Error(`Error: Feed with URL "${url}" not found.`);
+  }
+  const feedFollow = await createFeedFollow(user.id, feed.id);
+  console.log(
+    `User ${feedFollow.user?.name || "Unknown"} is now following ${
+      feedFollow.feed?.name || "Unknown"
+    }`
+  );
+}
+
+export async function handlerFollowing(cmdName: string, ...args: string[]) {
+  const config = readConfig();
+  const user = await getUserByName(config.currentUserName);
+  if (!user) {
+    throw new Error(`Error: User "${config.currentUserName}" not found.`);
+  }
+  const feedFollows = await getFeedFollowsForUser(user.id);
+  console.log(`Feeds followed by ${user.name}:`);
+  for (const feedFollow of feedFollows) {
+    console.log(`- ${feedFollow.feed?.name || "Unknown feed"}`);
+  }
 }
 
 export async function handlerAgg(cmdName: string, ...args: string[]) {

@@ -7,6 +7,8 @@ import {
   handlerUsers,
   handlerAddFeed,
   handlerListFeeds,
+  handlerFollow,
+  handlerFollowing,
 } from "./commands";
 import { handlerLogin } from "./login";
 import { handlerReset } from "./reset";
@@ -21,6 +23,8 @@ async function main() {
 
   registerCommand(registry, "addfeed", handlerAddFeed);
   registerCommand(registry, "feeds", handlerListFeeds);
+  registerCommand(registry, "follow", handlerFollow);
+  registerCommand(registry, "following", handlerFollowing);
 
   const args = process.argv.slice(2);
   if (args.length < 1) {

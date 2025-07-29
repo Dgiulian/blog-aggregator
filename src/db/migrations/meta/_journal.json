@@ -15,6 +15,13 @@
       "when": 1753637597661,
       "tag": "0001_fair_zaran",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1753814529269,
+      "tag": "0002_special_prodigy",
+      "breakpoints": true
     }
   ]
 }
