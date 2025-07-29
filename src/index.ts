@@ -9,6 +9,7 @@ import {
   handlerListFeeds,
   handlerFollow,
   handlerFollowing,
+  middlewareLoggedIn,
 } from "./commands";
 import { handlerLogin } from "./login";
 import { handlerReset } from "./reset";
@@ -21,10 +22,10 @@ async function main() {
   registerCommand(registry, "users", handlerUsers);
   registerCommand(registry, "reset", handlerReset);
 
-  registerCommand(registry, "addfeed", handlerAddFeed);
+  registerCommand(registry, "addfeed", middlewareLoggedIn(handlerAddFeed));
   registerCommand(registry, "feeds", handlerListFeeds);
-  registerCommand(registry, "follow", handlerFollow);
-  registerCommand(registry, "following", handlerFollowing);
+  registerCommand(registry, "follow", middlewareLoggedIn(handlerFollow));
+  registerCommand(registry, "following", middlewareLoggedIn(handlerFollowing));
 
   const args = process.argv.slice(2);
   if (args.length < 1) {
