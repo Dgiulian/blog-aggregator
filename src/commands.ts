@@ -13,6 +13,11 @@ import {
   deleteFeedFollowByUrl,
 } from "./lib/db/queries/feedFollows";
 import { createUser, getAllUsers, getUserByName } from "./lib/db/queries/users";
+import {
+  createPost,
+  getPostsForUser,
+  postExistsByUrl,
+} from "./lib/db/queries/posts";
 import { fetchFeed, listAllFeeds } from "./rss";
 
 export type CommandHandler = (
@@ -193,8 +198,22 @@ function handleError(error: any) {
 }
 
 /**
+ * Parses a date string from an RSS feed
+ * @param dateStr Date string from RSS feed
+ * @returns Date object or null if parsing fails
+ */
+function parsePublishedDate(dateStr: string): Date | null {
+  try {
+    return new Date(dateStr);
+  } catch (error) {
+    console.error(`Error parsing date: ${dateStr}`, error);
+    return null;
+  }
+}
+
+/**
  * Scrapes feeds from RSS sources
- * Gets the next feed to fetch, marks it as fetched, and processes its items
+ * Gets the next feed to fetch, marks it as fetched, and saves posts to the database
  */
 async function scrapeFeeds() {
   // Get the next feed to fetch
@@ -219,10 +238,43 @@ async function scrapeFeeds() {
       `Found ${rssFeed.channel.item.length} items in feed: ${rssFeed.channel.title}`
     );
 
-    // Print the titles of the items
+    let savedCount = 0;
+    let skippedCount = 0;
+
+    // Save the posts to the database
     for (const item of rssFeed.channel.item) {
-      console.log(`- ${item.title}`);
+      // Check if post already exists
+      const exists = await postExistsByUrl(item.link);
+
+      if (exists) {
+        skippedCount++;
+        continue;
+      }
+
+      // Parse the published date
+      const publishedAt = parsePublishedDate(item.pubDate);
+
+      // Create the post
+      const result = await createPost(
+        item.title,
+        item.link,
+        item.description || null,
+        publishedAt,
+        feed.id
+      );
+
+      if (result.success) {
+        savedCount++;
+        console.log(`Saved: ${item.title}`);
+      } else {
+        skippedCount++;
+        console.log(`Skipped: ${item.title} - ${result.error}`);
+      }
     }
+
+    console.log(
+      `Feed processing complete. Saved: ${savedCount}, Skipped: ${skippedCount}`
+    );
   } catch (error) {
     console.error(`Error fetching feed ${feed.name} (${feed.url}):`, error);
   }
@@ -259,6 +311,61 @@ export async function handlerAgg(cmdName: string, ...args: string[]) {
       resolve();
     });
   });
+}
+
+/**
+ * Handles the browse command to view latest posts
+ * @param cmdName Command name
+ * @param user Current user
+ * @param args Command arguments
+ */
+export async function handlerBrowse(
+  cmdName: string,
+  user: User,
+  ...args: string[]
+) {
+  // Default limit is 2 if not provided
+  let limit = 2;
+
+  if (args.length > 0) {
+    const parsedLimit = parseInt(args[0], 10);
+    if (!isNaN(parsedLimit) && parsedLimit > 0) {
+      limit = parsedLimit;
+    } else {
+      console.warn(`Invalid limit: ${args[0]}. Using default limit of 2.`);
+    }
+  }
+
+  const posts = await getPostsForUser(user.id, limit);
+
+  if (posts.length === 0) {
+    console.log("No posts found. Try following some feeds first!");
+    return;
+  }
+
+  console.log(`Latest ${posts.length} posts from your feeds:`);
+
+  for (const post of posts) {
+    console.log(`\n${post.title}`);
+    console.log(`Feed: ${post.feed?.name || "Unknown feed"}`);
+    console.log(`URL: ${post.url}`);
+    console.log(
+      `Published: ${
+        post.publishedAt ? post.publishedAt.toLocaleString() : "Unknown"
+      }`
+    );
+
+    if (post.description) {
+      // Truncate description if it's too long
+      const maxLength = 150;
+      const description =
+        post.description.length > maxLength
+          ? post.description.substring(0, maxLength) + "..."
+          : post.description;
+
+      console.log(`Description: ${description}`);
+    }
+  }
 }
 export async function handlerListFeeds(cmdName: string, ...args: string[]) {
   await listAllFeeds();
