@@ -3,6 +3,7 @@ import { createFeed, getFeedByUrl, Feed, User } from "./lib/db/queries/feeds";
 import {
   createFeedFollow,
   getFeedFollowsForUser,
+  deleteFeedFollowByUrl,
 } from "./lib/db/queries/feedFollows";
 import { createUser, getAllUsers, getUserByName } from "./lib/db/queries/users";
 import { fetchFeed, listAllFeeds } from "./rss";
@@ -104,6 +105,25 @@ export async function handlerFollowing(
   console.log(`Feeds followed by ${user.name}:`);
   for (const feedFollow of feedFollows) {
     console.log(`- ${feedFollow.feed?.name || "Unknown feed"}`);
+  }
+}
+
+export async function handlerUnfollow(
+  cmdName: string,
+  user: User,
+  ...args: string[]
+) {
+  if (args.length < 1) {
+    throw new Error("Usage: unfollow <url>");
+  }
+  const [url] = args;
+
+  const result = await deleteFeedFollowByUrl(user.id, url);
+
+  if (result.success) {
+    console.log(result.message);
+  } else {
+    throw new Error(result.message);
   }
 }
 

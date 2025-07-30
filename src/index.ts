@@ -9,6 +9,7 @@ import {
   handlerListFeeds,
   handlerFollow,
   handlerFollowing,
+  handlerUnfollow,
   middlewareLoggedIn,
 } from "./commands";
 import { handlerLogin } from "./login";
@@ -26,6 +27,7 @@ async function main() {
   registerCommand(registry, "feeds", handlerListFeeds);
   registerCommand(registry, "follow", middlewareLoggedIn(handlerFollow));
   registerCommand(registry, "following", middlewareLoggedIn(handlerFollowing));
+  registerCommand(registry, "unfollow", middlewareLoggedIn(handlerUnfollow));
 
   const args = process.argv.slice(2);
   if (args.length < 1) {
